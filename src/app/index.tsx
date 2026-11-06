@@ -21,6 +21,7 @@ import { router } from 'expo-router';
 import { COLORS } from '../constants/theme';
 import { loginAccount } from '../data/accountStorage';
 import { supabase } from '../lib/supabase';
+import { signOutWithPushCleanup } from '../lib/pushNotifications';
 
 export default function LoginScreen() {
   const [loginRole, setLoginRole] = useState<'gamer' | 'admin'>('gamer');
@@ -64,13 +65,13 @@ export default function LoginScreen() {
         .maybeSingle();
 
       if (profileError || !profile) {
-        await supabase.auth.signOut();
+        await signOutWithPushCleanup();
         throw new Error(profileError?.message ?? 'Your GamerHub profile could not be found. Please contact an administrator.');
       }
 
       const accountIsAdmin = profile.role === 'admin';
       if ((loginRole === 'admin') !== accountIsAdmin) {
-        await supabase.auth.signOut();
+        await signOutWithPushCleanup();
         Alert.alert(
           'Admin access is not assigned',
           accountIsAdmin

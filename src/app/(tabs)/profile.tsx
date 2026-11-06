@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Alert,
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +16,7 @@ import { COLORS } from '../../constants/theme';
 import AppHeader from '../../components/AppHeader';
 import AppButton from '../../components/AppButton';
 import { supabase } from '../../lib/supabase';
+import { signOutWithPushCleanup } from '../../lib/pushNotifications';
 
 export default function Profile() {
   const [isStaff, setIsStaff] = useState(false);
@@ -148,8 +150,12 @@ export default function Profile() {
           title="LOG OUT"
           variant="danger"
           onPress={async () => {
-            await supabase.auth.signOut();
-            router.replace('/');
+            try {
+              await signOutWithPushCleanup();
+              router.replace('/');
+            } catch (error) {
+              Alert.alert('Could not log out', error instanceof Error ? error.message : 'Please try again.');
+            }
           }}
           style={{ marginTop: 25 }}
         />

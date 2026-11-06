@@ -68,11 +68,23 @@ PayPal Sandbox is implemented for station reservations, food orders, and playtim
 
 The PayPal client secret remains in Supabase Edge Function Secrets. The function uses the Sandbox API host and PHP amounts; switch to PayPal's live environment only after a separate production-readiness review and live credentials.
 
+## Push notifications
+
+The app registers the signed-in device for Expo push notifications. New customer notifications for reservation confirmation, session start or completion, paid extensions, food payment and order status, and station transfer decisions are dispatched through the `gamerhub-push-notification` Edge Function. Foreground alerts remain in-app banners; tapping a background notification opens Notifications. The five-minute reminder remains in-app only.
+
+1. Apply the prerequisite notification migrations and `20261117_gamerhub_push_notifications.sql`, `20261118_gamerhub_email_notifications.sql`, and `20261120_gamerhub_push_token_unregister.sql` in order. If migrations were applied via SQL Editor, reconcile remote migration history before using `supabase db push`.
+2. Set the same randomly generated secret in Supabase Vault as `gamerhub_push_webhook_secret` and in Edge Function secrets as `GAMERHUB_PUSH_WEBHOOK_SECRET`. Never put it in the app or repository.
+3. Deploy `npx supabase functions deploy gamerhub-push-notification --project-ref bcygymygeeilobzceuyr --no-verify-jwt`. The function authenticates the database webhook using the shared secret; do not remove that check.
+4. Configure Firebase for the Android package, place its `google-services.json` at the project root, and upload the FCM V1 service account key to EAS credentials. Keep the service account key private and outside the app. For iOS, configure the bundle identifier and APNs credentials. See [Expo push setup](https://docs.expo.dev/push-notifications/push-notifications-setup/) and [FCM credentials](https://docs.expo.dev/push-notifications/fcm-credentials/).
+5. Create a new development or preview build, sign in, allow notifications, and trigger an event for that account. Android remote push is not supported in Expo Go. The EAS archive excludes generated native folders so its build applies the config plugins; run `npx expo prebuild` before local native builds if the existing native folders are out of date.
+
+Signing out removes the current device token before ending the session. If the device is offline, sign-out is blocked until token cleanup succeeds. Push delivery is not guaranteed: inspect Edge Function logs and Expo push receipts when troubleshooting; the current Edge Function does not yet poll receipts.
+
 ## Current integration boundaries
 
 - GCash and Maya are recorded as pending payment requests for staff verification. PayPal Sandbox uses the server-side Edge Function described above.
 - The reservation activation uses a PIN and staff confirmation. A camera-based QR scanner is not configured.
-- Waitlist position is stored and viewable in-app; push notifications are not configured.
+- Waitlist position is stored and viewable in-app; waitlist push notifications are not configured.
 - The staff role must be granted manually. Do not make staff role assignment available in customer registration.
 
 ## Development checks

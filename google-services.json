@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "334718018775",
+    "project_id": "gamer-hub-ffb73",
+    "storage_bucket": "gamer-hub-ffb73.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:334718018775:android:3ec302f99675e3c825fc92",
+        "android_client_info": {
+          "package_name": "com.mschelle.GamerHub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3FR5avXtVwhO-qGM7YiSvqFxJa8JyNvY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

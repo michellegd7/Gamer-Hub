@@ -23,6 +23,7 @@ Deno.serve(async (request: Request) => {
       .select('id,expo_push_token').eq('user_id', notification.user_id);
     if (error) throw error;
     let pushSent = 0;
+    let pushFailed = 0;
     if (devices?.length) {
       const messages = devices.map(device => ({
         to: device.expo_push_token,
@@ -33,19 +34,35 @@ Deno.serve(async (request: Request) => {
         channelId: 'gamerhub-updates',
         data: { notificationId: notification.id, reservationId: notification.reservation_id ?? null },
       }));
-      const pushResponse = await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
-        headers: { Accept: 'application/json', 'Accept-encoding': 'gzip, deflate', 'Content-Type': 'application/json' },
-        body: JSON.stringify(messages),
-      });
-      const result = await pushResponse.json();
-      if (!pushResponse.ok) console.error('Expo push request failed with status', pushResponse.status);
-      else {
-        pushSent = messages.length;
+      for (let offset = 0; offset < messages.length; offset += 100) {
+        const batch = messages.slice(offset, offset + 100);
+        const pushResponse = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Accept-encoding': 'gzip, deflate', 'Content-Type': 'application/json' },
+          body: JSON.stringify(batch),
+        });
+        const result = await pushResponse.json();
+        if (!pushResponse.ok) {
+          console.error('Expo push request failed with status', pushResponse.status);
+          pushFailed += batch.length;
+          continue;
+        }
         const tickets = Array.isArray(result?.data) ? result.data : [result?.data];
-        const expiredTokenIds = tickets.flatMap((ticket: { details?: { error?: string } }, index: number) =>
-          ticket?.details?.error === 'DeviceNotRegistered' ? [devices[index]?.id] : []);
-        if (expiredTokenIds.length) await admin.from('gamerhub_push_tokens').delete().in('id', expiredTokenIds);
+        const expiredTokenIds: string[] = [];
+        for (let index = 0; index < batch.length; index++) {
+          const ticket = tickets[index];
+          if (ticket?.status === 'ok') {
+            pushSent++;
+          } else {
+            pushFailed++;
+            console.error('Expo push ticket failed:', ticket?.details?.error ?? ticket?.message ?? 'Missing ticket');
+            if (ticket?.details?.error === 'DeviceNotRegistered') expiredTokenIds.push(devices[offset + index].id);
+          }
+        }
+        if (expiredTokenIds.length) {
+          const { error: deleteError } = await admin.from('gamerhub_push_tokens').delete().in('id', expiredTokenIds);
+          if (deleteError) throw deleteError;
+        }
       }
     }
 
@@ -76,7 +93,7 @@ Deno.serve(async (request: Request) => {
       } else emailSent = true;
     }
 
-    return response({ pushSent, emailSent, emailConfigured: Boolean(resendKey && from) });
+    return response({ pushSent, pushFailed, emailSent, emailConfigured: Boolean(resendKey && from) }, pushFailed ? 502 : 200);
   } catch (error) {
     console.error('GamerHub push dispatch failed:', error);
     return response({ error: error instanceof Error ? error.message : 'Push dispatch failed' }, 500);

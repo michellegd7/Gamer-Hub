@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { COLORS } from '../constants/theme';
 import { supabase } from '../lib/supabase';
+import { signOutWithPushCleanup } from '../lib/pushNotifications';
 
 type Tab = 'Overview' | 'Stations' | 'Sessions' | 'Active Sessions' | 'Transfers' | 'Orders' | 'Maintenance' | 'Transactions' | 'Customers' | 'Reports';
 type Row = Record<string, any>;
@@ -34,12 +35,12 @@ export default function StaffConsole() {
   const [latestReservationNotice, setLatestReservationNotice] = useState<Row | null>(null);
 
   const logout = async () => {
-    const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) {
-      Alert.alert('Could not log out', signOutError.message);
-      return;
+    try {
+      await signOutWithPushCleanup();
+      router.replace('/');
+    } catch (error) {
+      Alert.alert('Could not log out', error instanceof Error ? error.message : 'Please try again.');
     }
-    router.replace('/');
   };
 
   const load = useCallback(async () => {

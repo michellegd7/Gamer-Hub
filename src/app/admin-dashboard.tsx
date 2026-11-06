@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { COLORS } from '../constants/theme';
 import { supabase } from '../lib/supabase';
+import { signOutWithPushCleanup } from '../lib/pushNotifications';
 
 type Metrics = {
   stations: number;
@@ -44,12 +45,12 @@ export default function AdminDashboard() {
   const scrollRef = useRef<ScrollView>(null);
 
   const logout = async () => {
-    const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) {
-      Alert.alert('Could not log out', signOutError.message);
-      return;
+    try {
+      await signOutWithPushCleanup();
+      router.replace('/');
+    } catch (error) {
+      Alert.alert('Could not log out', error instanceof Error ? error.message : 'Please try again.');
     }
-    router.replace('/');
   };
 
   const loadDashboard = useCallback(async () => {

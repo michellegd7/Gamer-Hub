@@ -75,7 +75,7 @@ export default function Settings() {
           <View style={styles.copy}><Text style={styles.prefTitle}>Live in-app alerts</Text><Text style={styles.description}>Admin confirmations and session updates appear as a banner while GamerHub is open and remain saved under Notifications.</Text></View>
           <Text style={styles.liveLabel}>LIVE</Text>
         </View>
-        <Text style={styles.smallNote}>These alerts use Supabase Realtime, so there is no unsupported Expo push registration in Expo Go.</Text>
+        <Text style={styles.smallNote}>Live alerts use Supabase Realtime. On a supported device build, allow notifications to receive updates while the app is closed.</Text>
 
         <Text style={[styles.section, styles.securityHeading]}>EMAIL UPDATES</Text>
         <Pressable accessibilityRole="switch" accessibilityState={{ checked: emailNotificationsEnabled }} onPress={() => void setEmailNotifications(!emailNotificationsEnabled)} style={styles.preference}>

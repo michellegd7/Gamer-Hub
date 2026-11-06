@@ -1,12 +1,15 @@
 # EAS archive for this app only. Build is run with EAS_NO_VCS=1 and EAS_PROJECT_ROOT set.
 node_modules/
 .expo/
+android/
+ios/
 dist/
 web-build/
 .env
 .env.*
 !.env.example
 *.tsbuildinfo
+*firebase-adminsdk*.json
 .vscode/
 example/
 .git/
